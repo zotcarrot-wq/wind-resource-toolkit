@@ -1,4 +1,5 @@
 from read_data import read_data_func
+from correlation import correlate_by_hour, summarize_correlations
 
 # Path to measurement data
 measurement_data_path = r"D:\_10_code\wind-resource-toolkit\99_sample\vortex.les.912025.1year 140m UTC+07.0 ERA5.txt"
@@ -8,10 +9,33 @@ ref_data_folder_path = r"D:\_10_code\wind-resource-toolkit\99_sample\ref_data"
 
 
 def main():
+    # Read measurement and reference data
     measurement_data, ref_data = read_data_func(measurement_data_path, ref_data_folder_path)
-    return None
+    
+    print("\nMeasurement data shape:", measurement_data.shape)
+    print("Reference data locations:", list(ref_data.keys()))
+    print("\nReference data details:")
+    for loc, df in ref_data.items():
+        print(f"  {loc}: {df.shape[0]} rows, time range: {df.index.min()} to {df.index.max()}")
+    
+    # Correlate measurement data with reference data by hour
+    print("\n" + "="*70)
+    print("CORRELATING MEASUREMENT DATA WITH REFERENCE DATA BY HOUR")
+    print("="*70)
+    
+    correlation_results = correlate_by_hour(measurement_data, ref_data)
+    
+    # Print summary
+    summarize_correlations(correlation_results)
+    
+    # Optionally save detailed results to CSV
+    for location_name, corr_df in correlation_results.items():
+        output_path = f"correlation_results_{location_name.replace(' ', '_')}.csv"
+        corr_df.to_csv(output_path, index=False)
+        print(f"\nSaved results to: {output_path}")
+    
+    return correlation_results
 
 
 if __name__ == "__main__":
-    # Display the first few rows of the measurement data
-    main()
+    correlation_results = main()

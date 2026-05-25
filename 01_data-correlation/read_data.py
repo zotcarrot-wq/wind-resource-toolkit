@@ -7,6 +7,54 @@ measurement_data_path = r"D:\_10_code\wind-resource-toolkit\99_sample\vortex.les
 # Path to ref data
 ref_data_folder_path = r"D:\_10_code\wind-resource-toolkit\99_sample\ref_data"
 
+def read_vortex_les_txt(file_path):
+    """
+    Read Vortex LES measurement data TXT file.
+    
+    Skips metadata lines and reads the actual data table starting from the header line
+    containing "YYYYMMDD" or "HHMM".
+    
+    Parameters
+    ----------
+    file_path : str
+        Path to Vortex LES file.
+    
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with datetime index.
+    """
+    # Find the header line (contains YYYYMMDD or HHMM)
+    header_row_index = None
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for i, line in enumerate(f):
+            if 'YYYYMMDD' in line or (i > 0 and 'HHMM' in line):
+                header_row_index = i
+                break
+    
+    if header_row_index is None:
+        raise ValueError("Could not find header line with 'YYYYMMDD' or 'HHMM'")
+    
+    # Read the file starting from the header
+    df = pd.read_csv(
+        file_path,
+        sep=r'\s+',  # Use regex to handle variable whitespace
+        skiprows=header_row_index,
+        engine='python'
+    )
+    
+    # Parse datetime from YYYYMMDD and HHMM columns
+    if 'YYYYMMDD' in df.columns and 'HHMM' in df.columns:
+        # Combine date and time
+        date_time_str = df['YYYYMMDD'].astype(str) + ' ' + df['HHMM'].astype(str).str.zfill(4)
+        df['datetime'] = pd.to_datetime(date_time_str, format='%Y%m%d %H%M', errors='coerce')
+        df = df.set_index('datetime')
+        df = df.drop(['YYYYMMDD', 'HHMM'], axis=1)
+    
+    print("Successfully read Vortex LES file: ", file_path)
+    return df
+
+
 def detect_and_read_file(file_path):
     _, ext = os.path.splitext(file_path)
     ext = ext.lower()
@@ -143,7 +191,8 @@ def convert_underscore_filename(file_name):
     return converted_name
 
 def read_data_func(measurement_data_path, ref_data_folder_path):
-    df_measurement = detect_and_read_file(measurement_data_path)
+    # Use specialized reader for Vortex LES measurement data
+    df_measurement = read_vortex_les_txt(measurement_data_path)
 
     # (Optional) Display the first few rows
     # print(df_measurement.head())
