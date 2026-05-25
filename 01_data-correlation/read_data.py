@@ -210,9 +210,9 @@ def read_data_func(measurement_data_path, ref_data_folder_path):
     ref_data = {}
     for file in data_files:
         file_path = os.path.join(ref_data_folder_path, file)
-
-    file_id = convert_underscore_filename(file)
-    # print(file_id)
-    ref_data[file_id] = read_windpro_reanalysis_txt(file_path)
-    print("Done processing file: ", file)
+        file_id = convert_underscore_filename(file)
+        # print(file_id)
+        ref_data[file_id] = read_windpro_reanalysis_txt(file_path)
+        print("Done processing file: ", file)
+    
     return df_measurement, ref_data
